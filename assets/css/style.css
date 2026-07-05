@@ -1,0 +1,120 @@
+/* GETEC Frota — mobile-first, large touch targets. */
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --accent: #2563eb;
+  --accent-press: #1d4ed8;
+  --error: #f87171;
+  --ok: #4ade80;
+  --field: #0f172a;
+  --border: #334155;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 22px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+label {
+  display: block;
+  margin: 16px 0 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+input {
+  width: 100%;
+  padding: 14px 14px;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--field);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+button {
+  width: 100%;
+  margin-top: 24px;
+  padding: 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button:active { background: var(--accent-press); }
+button:disabled { opacity: 0.6; cursor: default; }
+
+.linkbtn {
+  display: inline-block;
+  margin-top: 18px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0;
+  width: auto;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.msg {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  display: none;
+}
+.msg.show { display: block; }
+.msg.error { background: rgba(248,113,113,0.12); color: var(--error); }
+.msg.ok { background: rgba(74,222,128,0.12); color: var(--ok); }
+
+.topbar {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.topbar .who { color: var(--muted); font-size: 0.9rem; }
+.topbar button { width: auto; margin: 0; padding: 10px 14px; font-size: 0.9rem; background: var(--border); }

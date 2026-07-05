@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GETEC Frota</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div class="topbar">
+    <span class="who" id="who">…</span>
+    <button id="logout" type="button">Sair</button>
+  </div>
+
+  <main class="card">
+    <h1>Você está dentro</h1>
+    <p class="subtitle">Home e formulários chegam na Fase 3.</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script>
+    document.getElementById('logout').addEventListener('click', signOut);
+
+    (async () => {
+      const session = await requireAuth();
+      if (!session) return;
+      // Show the profile name from `usuarios` (falls back to the auth e-mail).
+      const { data } = await supabaseClient
+        .from('usuarios')
+        .select('nome, papel')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      const who = document.getElementById('who');
+      who.textContent = data
+        ? `${data.nome} · ${data.papel}`
+        : session.user.email;
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GETEC Frota — Entrar</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>GETEC Frota</h1>
+    <p class="subtitle">Entre para lançar km e abastecimentos.</p>
+
+    <form id="login-form" novalidate>
+      <label for="email">E-mail</label>
+      <input id="email" type="email" autocomplete="username" inputmode="email" required>
+
+      <label for="senha">Senha</label>
+      <input id="senha" type="password" autocomplete="current-password" required>
+
+      <button id="submit" type="submit">Entrar</button>
+    </form>
+
+    <button id="forgot" class="linkbtn" type="button">Esqueci minha senha</button>
+
+    <div id="msg" class="msg"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script>
+    const form = document.getElementById('login-form');
+    const emailEl = document.getElementById('email');
+    const senhaEl = document.getElementById('senha');
+    const submitBtn = document.getElementById('submit');
+    const forgotBtn = document.getElementById('forgot');
+    const msg = document.getElementById('msg');
+
+    function show(text, kind) {
+      msg.textContent = text;
+      msg.className = 'msg show ' + kind;
+    }
+    function clearMsg() { msg.className = 'msg'; }
+
+    // Already logged in? Skip straight to the app.
+    currentSession().then(s => { if (s) location.replace('app.html'); });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+      const email = emailEl.value.trim();
+      const senha = senhaEl.value;
+      if (!email || !senha) {
+        show('Preencha e-mail e senha.', 'error');
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Entrando…';
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password: senha });
+      if (error) {
+        show(authErrorMessage(error), 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Entrar';
+        return;
+      }
+      location.replace('app.html');
+    });
+
+    forgotBtn.addEventListener('click', async () => {
+      clearMsg();
+      const email = emailEl.value.trim();
+      if (!email) {
+        show('Digite seu e-mail acima e toque em "Esqueci minha senha".', 'error');
+        return;
+      }
+      forgotBtn.disabled = true;
+      const redirectTo = new URL('reset-senha.html', location.href).href;
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+      forgotBtn.disabled = false;
+      if (error) {
+        show(authErrorMessage(error), 'error');
+        return;
+      }
+      show('Enviamos um link de redefinição para ' + email + '. Confira seu e-mail.', 'ok');
+    });
+  </script>
+</body>
+</html>
