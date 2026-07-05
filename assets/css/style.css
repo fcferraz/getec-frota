@@ -118,3 +118,66 @@ button:disabled { opacity: 0.6; cursor: default; }
 }
 .topbar .who { color: var(--muted); font-size: 0.9rem; }
 .topbar button { width: auto; margin: 0; padding: 10px 14px; font-size: 0.9rem; background: var(--border); }
+
+/* Phase 3: home + forms */
+body { justify-content: flex-start; }
+
+h2 { margin: 28px 0 10px; font-size: 1rem; color: var(--muted); font-weight: 600; }
+
+select, textarea {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--field);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: inherit;
+}
+select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+input[type="file"] { padding: 10px; }
+
+.bigbtns { display: flex; flex-direction: column; gap: 14px; }
+.bigbtn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 20px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 12px;
+  text-decoration: none;
+}
+.bigbtn:active { background: var(--accent-press); }
+.bigbtn span { line-height: 1; }
+
+.back {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.recent { list-style: none; padding: 0; margin: 0; }
+.recent li {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-size: 0.92rem;
+}
+.recent li.muted { color: var(--muted); border-style: dashed; }
+
+/* Toast fixo no topo, sobre a tela toda. */
+#toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  z-index: 10;
+  margin: 0;
+}

@@ -13,29 +13,175 @@
   </div>
 
   <main class="card">
-    <h1>Você está dentro</h1>
-    <p class="subtitle">Home e formulários chegam na Fase 3.</p>
+    <!-- HOME -->
+    <section id="view-home" class="view">
+      <h1>O que você vai lançar?</h1>
+      <div class="bigbtns">
+        <a class="bigbtn" href="#abastecer">⛽<span>Abastecer</span></a>
+        <a class="bigbtn" href="#viagem">🚗<span>Registrar viagem</span></a>
+      </div>
+      <h2>Seus últimos lançamentos</h2>
+      <ul id="recent" class="recent"><li class="muted">Carregando…</li></ul>
+    </section>
+
+    <!-- ABASTECIMENTO -->
+    <section id="view-abastecer" class="view" hidden>
+      <a class="back" href="#home">← Voltar</a>
+      <h1>Abastecer</h1>
+      <form id="ab-form" novalidate>
+        <label for="ab-veiculo">Veículo</label>
+        <select id="ab-veiculo" required></select>
+
+        <label for="ab-data">Data</label>
+        <input id="ab-data" type="date" required>
+
+        <label for="ab-km">Km do odômetro</label>
+        <input id="ab-km" type="number" inputmode="decimal" min="0" step="1" required>
+
+        <label for="ab-litros">Litros</label>
+        <input id="ab-litros" type="number" inputmode="decimal" min="0" step="0.01" required>
+
+        <label for="ab-valor">Valor total (R$)</label>
+        <input id="ab-valor" type="number" inputmode="decimal" min="0" step="0.01" required>
+
+        <label for="ab-posto">Posto</label>
+        <input id="ab-posto" type="text" autocomplete="off">
+
+        <label for="ab-foto">Foto do recibo</label>
+        <input id="ab-foto" type="file" accept="image/*" capture="environment" required>
+
+        <label for="ab-obs">Observação</label>
+        <textarea id="ab-obs" rows="2"></textarea>
+
+        <button id="ab-submit" type="submit">Salvar abastecimento</button>
+      </form>
+    </section>
+
+    <!-- VIAGEM -->
+    <section id="view-viagem" class="view" hidden>
+      <a class="back" href="#home">← Voltar</a>
+      <h1>Registrar viagem</h1>
+      <form id="vg-form" novalidate>
+        <label for="vg-veiculo">Veículo</label>
+        <select id="vg-veiculo" required></select>
+
+        <label for="vg-data">Data</label>
+        <input id="vg-data" type="date" required>
+
+        <label for="vg-km-ini">Km inicial</label>
+        <input id="vg-km-ini" type="number" inputmode="decimal" min="0" step="1" required>
+
+        <label for="vg-km-fim">Km final</label>
+        <input id="vg-km-fim" type="number" inputmode="decimal" min="0" step="1" required>
+
+        <label for="vg-destino">Destino</label>
+        <input id="vg-destino" type="text" autocomplete="off">
+
+        <label for="vg-motivo">Motivo</label>
+        <input id="vg-motivo" type="text" autocomplete="off">
+
+        <label for="vg-obs">Observação</label>
+        <textarea id="vg-obs" rows="2"></textarea>
+
+        <button id="vg-submit" type="submit">Salvar viagem</button>
+      </form>
+    </section>
   </main>
+
+  <div id="toast" class="msg"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js"></script>
   <script src="assets/js/auth.js"></script>
+  <script src="assets/js/abastecimento.js"></script>
+  <script src="assets/js/viagem.js"></script>
   <script>
     document.getElementById('logout').addEventListener('click', signOut);
 
+    let SESSION = null;
+    function currentUserId() { return SESSION.user.id; }
+
+    // Toast global usado pelos formulários.
+    let toastTimer;
+    function showToast(text, kind) {
+      const t = document.getElementById('toast');
+      t.textContent = text;
+      t.className = 'msg show ' + kind;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.className = 'msg'; }, 4000);
+    }
+
+    // Carrega veículos ativos num <select>. Cache simples entre os dois forms.
+    let veiculosCache;
+    async function loadVeiculos(sel) {
+      if (!veiculosCache) {
+        const { data, error } = await supabaseClient
+          .from('veiculos').select('id, placa, modelo, apelido')
+          .eq('ativo', true).order('apelido');
+        veiculosCache = error ? [] : (data || []);
+      }
+      sel.innerHTML = '<option value="">Selecione…</option>' + veiculosCache
+        .map(v => `<option value="${v.id}">${v.apelido || v.modelo} · ${v.placa}</option>`)
+        .join('');
+    }
+
+    // Rota por hash: mostra a view, esconde as outras.
+    const views = ['home', 'abastecer', 'viagem'];
+    function route() {
+      const name = (location.hash.replace('#', '') || 'home');
+      const active = views.includes(name) ? name : 'home';
+      views.forEach(v =>
+        document.getElementById('view-' + v).hidden = (v !== active));
+      if (active === 'abastecer') initAbastecimento();
+      if (active === 'viagem') initViagem();
+      if (active === 'home') loadRecent();
+      window.scrollTo(0, 0);
+    }
+
+    function fmtDate(d) {
+      const [y, m, dd] = d.split('-');
+      return `${dd}/${m}/${y}`;
+    }
+
+    // Lista curta dos últimos lançamentos próprios (abastecimentos + viagens).
+    async function loadRecent() {
+      const ul = document.getElementById('recent');
+      const uid = currentUserId();
+      const [ab, vg] = await Promise.all([
+        supabaseClient.from('abastecimentos')
+          .select('data, litros, valor_total, criado_em')
+          .eq('usuario_id', uid).order('criado_em', { ascending: false }).limit(5),
+        supabaseClient.from('viagens')
+          .select('data, km_rodado, destino, criado_em')
+          .eq('usuario_id', uid).order('criado_em', { ascending: false }).limit(5),
+      ]);
+      const items = [
+        ...(ab.data || []).map(r => ({
+          criado_em: r.criado_em,
+          text: `⛽ ${fmtDate(r.data)} · ${r.litros} L · R$ ${Number(r.valor_total).toFixed(2)}`,
+        })),
+        ...(vg.data || []).map(r => ({
+          criado_em: r.criado_em,
+          text: `🚗 ${fmtDate(r.data)} · ${r.km_rodado} km${r.destino ? ' · ' + r.destino : ''}`,
+        })),
+      ].sort((a, b) => b.criado_em.localeCompare(a.criado_em)).slice(0, 6);
+
+      ul.innerHTML = items.length
+        ? items.map(i => `<li>${i.text}</li>`).join('')
+        : '<li class="muted">Nada por aqui ainda.</li>';
+    }
+
     (async () => {
-      const session = await requireAuth();
-      if (!session) return;
-      // Show the profile name from `usuarios` (falls back to the auth e-mail).
+      SESSION = await requireAuth();
+      if (!SESSION) return;
       const { data } = await supabaseClient
-        .from('usuarios')
-        .select('nome, papel')
-        .eq('id', session.user.id)
-        .maybeSingle();
-      const who = document.getElementById('who');
-      who.textContent = data
-        ? `${data.nome} · ${data.papel}`
-        : session.user.email;
+        .from('usuarios').select('nome, papel')
+        .eq('id', SESSION.user.id).maybeSingle();
+      document.getElementById('who').textContent =
+        data ? `${data.nome} · ${data.papel}` : SESSION.user.email;
+
+      window.addEventListener('hashchange', route);
+      route();
     })();
   </script>
 </body>
