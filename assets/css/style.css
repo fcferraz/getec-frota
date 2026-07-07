@@ -331,7 +331,4 @@ input[type="date"] {
   transform: translateY(-50%);
   cursor: pointer;
   color: #888;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
