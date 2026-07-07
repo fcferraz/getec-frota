@@ -157,7 +157,7 @@ async function load(veiculoNome, usuarioNome) {
     `<td>${fmtNum(Number(r.km_inicial))}</td>` +
     `<td class="km-final">${fmtNum(Number(r.km_final))}</td>` +
     `<td>${fmtNum(Number(r.km_rodado))}</td>` +
-    `<td><button type="button" class="linkbtn" data-path="${esc(r.foto_km_final_url)}">Ver odômetro</button>` +
+    `<td><button type="button" class="linkbtn" data-path="${esc(r.foto_km_final_url)}">Ver registro</button>` +
     `<span class="checkhint">Confira com o Km final</span></td>`);
 
   wireFotos('t-recibos', 'o recibo');
