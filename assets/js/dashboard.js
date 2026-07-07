@@ -119,8 +119,8 @@ async function load(veiculoNome, usuarioNome) {
     .select('data, veiculo_id, usuario_id, valor_total, foto_recibo_url')
     .gte('data', de).lte('data', ate).order('data', { ascending: false });
   let qv = supabaseClient.from('viagens')
-    .select('data, veiculo_id, usuario_id, km_rodado')
-    .gte('data', de).lte('data', ate);
+    .select('data, veiculo_id, usuario_id, km_rodado, foto_km_final_url')
+    .gte('data', de).lte('data', ate).order('data', { ascending: false });
   if (vid) { qa = qa.eq('veiculo_id', vid); qv = qv.eq('veiculo_id', vid); }
   if (uid) { qa = qa.eq('usuario_id', uid); qv = qv.eq('usuario_id', uid); }
 
@@ -150,7 +150,14 @@ async function load(veiculoNome, usuarioNome) {
     `<td>${esc(nomeU(r.usuario_id))}</td><td>${brl(Number(r.valor_total))}</td>` +
     `<td><button type="button" class="linkbtn" data-path="${esc(r.foto_recibo_url)}">Ver recibo</button></td>`);
 
-  wireRecibos();
+  const odometros = viagens.filter(v => v.foto_km_final_url);
+  fillTable('t-viagens', odometros, 5, (r) =>
+    `<td>${fmtDate(r.data)}</td><td>${esc(nomeV(r.veiculo_id))}</td>` +
+    `<td>${esc(nomeU(r.usuario_id))}</td><td>${fmtNum(Number(r.km_rodado))}</td>` +
+    `<td><button type="button" class="linkbtn" data-path="${esc(r.foto_km_final_url)}">Ver odômetro</button></td>`);
+
+  wireFotos('t-recibos', 'o recibo');
+  wireFotos('t-viagens', 'a foto do odômetro');
 }
 
 function fillTable(id, rows, cols, rowHtml) {
@@ -160,15 +167,16 @@ function fillTable(id, rows, cols, rowHtml) {
     : `<tr><td colspan="${cols}" class="muted">Nada no período.</td></tr>`;
 }
 
-// URL assinada gerada sob demanda (bucket privado), expira em 1h.
-function wireRecibos() {
-  for (const btn of document.querySelectorAll('#t-recibos button[data-path]')) {
+// URL assinada gerada sob demanda (bucket privado 'recibos', expira em 1h).
+// Recibos e fotos de odômetro dividem o mesmo bucket (ver viagem.js).
+function wireFotos(tableId, oQue) {
+  for (const btn of document.querySelectorAll('#' + tableId + ' button[data-path]')) {
     btn.addEventListener('click', async () => {
       btn.disabled = true;
       const { data, error } = await supabaseClient.storage
         .from('recibos').createSignedUrl(btn.dataset.path, 3600);
       btn.disabled = false;
-      if (error || !data) return showToast('Não foi possível abrir o recibo.', 'error');
+      if (error || !data) return showToast('Não foi possível abrir ' + oQue + '.', 'error');
       window.open(data.signedUrl, '_blank');
     });
   }
