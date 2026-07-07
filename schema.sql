@@ -123,6 +123,23 @@ create policy "usuarios_insert"
 on public.usuarios for insert
 with check (public.is_admin() or id = auth.uid());
 
+-- Autocadastro entra sempre como funcionario/ativo; só admin cria/promove admin.
+create or replace function public.forcar_papel_funcionario_autocadastro()
+returns trigger language plpgsql as $$
+begin
+  if not public.is_admin() then
+    new.papel := 'funcionario';
+    new.ativo := true;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_forcar_papel_autocadastro on public.usuarios;
+create trigger trg_forcar_papel_autocadastro
+before insert on public.usuarios
+for each row execute function public.forcar_papel_funcionario_autocadastro();
+
 -- VEICULOS: todo autenticado pode ver; só admin gerencia
 create policy "veiculos_select"
 on public.veiculos for select

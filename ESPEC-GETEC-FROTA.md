@@ -45,17 +45,29 @@ getec-frota/
 
 RLS já garante isso no banco (ver `schema.sql`) — o front só precisa esconder/mostrar telas conforme o papel do usuário logado (tabela `usuarios.papel`).
 
+## Navegação
+
+Barra de navegação fixa no rodapé (padrão mobile), igual em todas as telas, com destaque no item ativo e respeito à safe-area:
+
+- **Início**, **Abastecer**, **Viagem**, **Histórico** — para todos.
+- **Painel** — 5º item, só aparece para `papel = 'admin'`. Abre um hub de administração com três atalhos: **Painel do admin** (`dashboard.html`), **Veículos** e **Usuários**. Funcionário nunca vê esse item (barra com 4 itens).
+
+A visibilidade é só de UI; o RLS é a trava real. As telas de admin (`#veiculos`, `#usuarios`, hub) e o `dashboard.html` também redirecionam/bloqueiam não-admin.
+
 ## Telas
 
-### 1. Login
-Email/senha via Supabase Auth. Sem cadastro público — usuários são criados pelo admin (via painel do Supabase, Authentication → Users).
+### 1. Login e autocadastro
+Abas **"Entrar"** e **"Criar conta"** no mesmo cartão, mesmo visual.
 
-Inclui um link **"Esqueci minha senha"** que chama `supabase.auth.resetPasswordForEmail(email)`. Fluxo de primeiro acesso:
-1. Admin cria a conta do funcionário no Supabase com email real e senha temporária.
-2. Admin insere a linha correspondente na tabela `usuarios` (nome, email, papel).
-3. Funcionário usa "Esqueci minha senha" no primeiro acesso e define a própria senha.
+**Entrar**: email/senha via `signInWithPassword`. Link **"Esqueci minha senha"** chama `resetPasswordForEmail(email)`; a tela `reset-senha.html` recebe o token do email e salva a nova senha via `updateUser({ password })`.
 
-Precisa de uma tela simples de "Redefinir senha" (`reset-senha.html`) que recebe o token do link do email e permite salvar a nova senha via `supabase.auth.updateUser({ password })`.
+**Criar conta (autocadastro)**: campos nome, email, senha. `signUp({ email, password, options: { data: { nome } } })` e, com sessão, insere a linha em `usuarios` (id, nome, email). Todo autocadastro entra como **funcionario/ativo** — forçado pelo trigger `forcar_papel_funcionario_autocadastro` no banco (não dá pra burlar nem via API direta; ver Regras de negócio). O admin promove a admin depois, se precisar, pela tela de usuários.
+
+Confirmação de e-mail (Supabase Auth → "Confirm email"):
+- **Desligada**: `signUp` já devolve sessão → cria a linha em `usuarios` e vai pro app.
+- **Ligada**: `signUp` não devolve sessão → mostra "confirme seu e-mail". A linha em `usuarios` é criada no primeiro login (app.html cria se não existir, usando o `nome` do metadata). Assim o fluxo funciona nas duas configurações.
+
+O admin ainda pode criar contas manualmente pelo Supabase (Authentication → Users) quando quiser — os dois caminhos convivem.
 
 ### 2. Home do funcionário
 Dois botões grandes: **Abastecer** e **Registrar viagem**. Lista curta com os últimos lançamentos próprios.
@@ -80,15 +92,19 @@ A **foto do odômetro no km final é obrigatória** (mesmo padrão da foto de re
 - Ranking de uso por funcionário
 - Filtros por veículo, funcionário e intervalo de datas
 
-### 6. Gestão de veículos (admin)
-CRUD simples: placa, modelo, apelido, ativo/inativo.
+### 6. Histórico (todos)
+Histórico completo do próprio usuário — abastecimentos + viagens combinados, ordenados por data desc, com "Carregar mais" (limite crescente). Admin vê o próprio histórico aqui (a visão cruzada de todos fica no dashboard).
 
-### 7. Gestão de usuários (admin)
-Lista de usuários, papel (admin/funcionario), ativar/desativar acesso.
+### 7. Gestão de veículos (admin)
+CRUD: placa, modelo, apelido, km atual. Editar e alternar ativo/inativo. **Soft-delete apenas** (nunca apaga de verdade — abastecimentos/viagens referenciam `veiculo_id`). Veículos inativos somem dos selects de abastecimento/viagem, mas continuam nos registros históricos e no dashboard.
+
+### 8. Gestão de usuários (admin)
+Lista de usuários (nome, email, papel, ativo). Admin alterna papel (admin ↔ funcionario) e ativo/inativo (soft-delete, mesma razão dos veículos). **Não cria contas** — criar conta Auth exige a secret key, que não pode ir pro front. A conta é criada manualmente no Supabase (Authentication → Users) e a linha adicionada na tabela `usuarios`; a UI traz uma nota curta explicando isso. O admin não consegue mexer no próprio registro (evita auto-lockout).
 
 ## Regras de negócio
 
 - `valor_por_litro` e `km_rodado` são calculados pelo banco (colunas geradas) — o front não precisa calcular, só exibir.
+- Autocadastro é sempre `funcionario`/`ativo`: o trigger `forcar_papel_funcionario_autocadastro` (`before insert` em `usuarios`) sobrescreve `papel` e `ativo` quando quem insere não é admin. Só admin consegue criar/promover admin. Não dá pra burlar mandando `papel: 'admin'` na chamada.
 - `viagens.km_inicial` é definido pelo banco via trigger `before insert` (`km_final` da última viagem do veículo, ou `km_atual` na primeira) — o front nunca envia esse valor, só exibe o esperado. Todo km final exige foto do odômetro (`foto_km_final_url`). Antifraude: motorista não consegue forjar o km inicial nem por chamada direta à API.
 - Trigger no banco atualiza `veiculos.km_atual` automaticamente a cada novo lançamento.
 - Funcionário só enxerga e edita os próprios registros (garantido por RLS, mas o front deve refletir isso na UI).

@@ -9,19 +9,53 @@
 <body>
   <main class="card">
     <h1>GETEC Frota</h1>
-    <p class="subtitle">Entre para lançar km e abastecimentos.</p>
+    <p class="subtitle" id="subtitle">Entre para lançar km e abastecimentos.</p>
+
+    <div class="tabs">
+      <button type="button" class="tab active" data-tab="login">Entrar</button>
+      <button type="button" class="tab" data-tab="signup">Criar conta</button>
+    </div>
 
     <form id="login-form" novalidate>
       <label for="email">E-mail</label>
       <input id="email" type="email" autocomplete="username" inputmode="email" required>
 
       <label for="senha">Senha</label>
-      <input id="senha" type="password" autocomplete="current-password" required>
+      <div class="password-field">
+        <input id="senha" type="password" autocomplete="current-password" required>
+        <span class="toggle-senha" onclick="toggleSenha(this)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </span>
+      </div>
 
       <button id="submit" type="submit">Entrar</button>
     </form>
 
     <button id="forgot" class="linkbtn" type="button">Esqueci minha senha</button>
+
+    <form id="signup-form" novalidate hidden>
+      <label for="su-nome">Nome</label>
+      <input id="su-nome" type="text" autocomplete="name" required>
+
+      <label for="su-email">E-mail</label>
+      <input id="su-email" type="email" autocomplete="email" inputmode="email" required>
+
+      <label for="su-senha">Senha</label>
+      <div class="password-field">
+        <input id="su-senha" type="password" autocomplete="new-password" required>
+        <span class="toggle-senha" onclick="toggleSenha(this)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </span>
+      </div>
+
+      <button id="su-submit" type="submit">Criar conta</button>
+    </form>
 
     <div id="msg" class="msg"></div>
   </main>
@@ -29,6 +63,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js"></script>
   <script src="assets/js/auth.js"></script>
+  <script src="assets/js/password-toggle.js"></script>
   <script>
     const form = document.getElementById('login-form');
     const emailEl = document.getElementById('email');
@@ -43,8 +78,25 @@
     }
     function clearMsg() { msg.className = 'msg'; }
 
+    const signupForm = document.getElementById('signup-form');
+
     // Already logged in? Skip straight to the app.
     currentSession().then(s => { if (s) location.replace('app.html'); });
+
+    // Alterna entre "Entrar" e "Criar conta".
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const isLogin = tab.dataset.tab === 'login';
+        document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === tab));
+        form.hidden = !isLogin;
+        forgotBtn.hidden = !isLogin;
+        signupForm.hidden = isLogin;
+        document.getElementById('subtitle').textContent = isLogin
+          ? 'Entre para lançar km e abastecimentos.'
+          : 'Crie sua conta de funcionário.';
+        clearMsg();
+      });
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -65,6 +117,44 @@
         return;
       }
       location.replace('app.html');
+    });
+
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+      const nome = document.getElementById('su-nome').value.trim();
+      const email = document.getElementById('su-email').value.trim();
+      const senha = document.getElementById('su-senha').value;
+      const suBtn = document.getElementById('su-submit');
+      if (!nome) return show('Informe seu nome.', 'error');
+      if (!email || !senha) return show('Preencha e-mail e senha.', 'error');
+      if (senha.length < 6) return show('A senha precisa de ao menos 6 caracteres.', 'error');
+
+      suBtn.disabled = true;
+      suBtn.textContent = 'Criando…';
+      // nome vai no metadata: se a confirmação de e-mail estiver ligada, a linha
+      // em usuarios é criada só no primeiro login (app.html), a partir daqui.
+      const { data, error } = await supabaseClient.auth.signUp({
+        email, password: senha, options: { data: { nome } },
+      });
+      if (error) {
+        show(authErrorMessage(error), 'error');
+        suBtn.disabled = false;
+        suBtn.textContent = 'Criar conta';
+        return;
+      }
+      if (data.session) {
+        // Confirmação de e-mail desligada: já logado. Cria a linha agora.
+        // Trigger no banco força papel=funcionario e ativo=true.
+        await supabaseClient.from('usuarios').insert({ id: data.user.id, nome, email });
+        location.replace('app.html');
+        return;
+      }
+      // Confirmação de e-mail ligada: sem sessão ainda.
+      show('Conta criada. Enviamos um link de confirmação para ' + email +
+           '. Confirme e depois entre.', 'ok');
+      suBtn.disabled = false;
+      suBtn.textContent = 'Criar conta';
     });
 
     forgotBtn.addEventListener('click', async () => {

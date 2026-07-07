@@ -24,14 +24,17 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* safe-area no topo: evita colar o header na barra do navegador/notch */
+  /* safe-area no topo; embaixo reserva espaço pra bottom nav fixa (~64px). */
   padding: calc(20px + env(safe-area-inset-top)) 16px
-           calc(24px + env(safe-area-inset-bottom));
+           calc(84px + env(safe-area-inset-bottom));
 }
 
 .card {
   width: 100%;
   max-width: 420px;
+  /* card é flex item do body; min-width:auto o impediria de encolher abaixo
+     da tabela larga, matando o overflow-x do .tablewrap. Deixa encolher. */
+  min-width: 0;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -187,19 +190,6 @@ input[type="file"] { padding: 10px; }
 /* Phase 4: dashboard do admin (mais denso, tabelas com scroll no mobile) */
 .card.wide, .topbar.wide { max-width: 900px; }
 
-.adminlink {
-  display: block;
-  margin-top: 18px;
-  padding: 16px 18px;
-  background: var(--border);
-  color: var(--text);
-  border-radius: 12px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 1rem;
-}
-.adminlink:active { opacity: 0.85; }
-
 .filters {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -231,7 +221,8 @@ table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 42
 th, td { padding: 10px 12px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); }
 th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
 td.muted { color: var(--muted); }
-table .linkbtn { margin: 0; }
+table td .linkbtn { margin: 0; }
+table td .linkbtn + .linkbtn { margin-left: 12px; }
 
 /* Ícone do date picker: nativo vem escuro, inverte pro tema dark. */
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
@@ -261,4 +252,86 @@ input[type="date"] {
   body { padding-left: 12px; padding-right: 12px; }
   .card { padding: 22px 16px; }
   .card.wide { padding: 20px 14px; }
+}
+
+/* Phase 5: bottom nav fixa, padrão mobile, safe-area embaixo. */
+.bottomnav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 20;
+}
+.bottomnav a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 2px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.68rem;
+}
+.bottomnav a.active { color: var(--accent); }
+.bottomnav .ico { font-size: 1.35rem; line-height: 1; }
+
+/* Botão de ajuda (i) + popover explicativo — plain CSS/JS, sem lib. */
+.hint {
+  width: 18px; height: 18px;
+  margin: 0 0 0 6px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: middle;
+  font-size: 0.7rem; font-weight: 700; font-style: italic; line-height: 1;
+  color: var(--muted); background: transparent;
+  border: 1px solid var(--border); border-radius: 50%;
+  cursor: pointer;
+}
+.hint:active { color: var(--accent); border-color: var(--accent); }
+
+.hint-pop {
+  position: absolute;
+  z-index: 30;
+  max-width: 260px;
+  padding: 10px 12px;
+  font-size: 0.85rem; line-height: 1.35;
+  color: var(--text); background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  display: none;
+}
+.hint-pop.show { display: block; }
+
+/* Abas Entrar / Criar conta no login. */
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.tab {
+  flex: 1; margin: 0; padding: 10px;
+  font-size: 0.95rem; font-weight: 600;
+  color: var(--muted); background: var(--field);
+  border: 1px solid var(--border); border-radius: 10px;
+  cursor: pointer;
+}
+.tab.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+/* Mostrar/ocultar senha: ícone puro dentro do input, sem cara de botão. */
+.password-field {
+  position: relative;
+}
+.password-field input {
+  width: 100%;
+  padding-right: 40px;
+  box-sizing: border-box;
+}
+.password-field .toggle-senha {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

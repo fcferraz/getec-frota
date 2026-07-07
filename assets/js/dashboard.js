@@ -76,6 +76,7 @@ async function init() {
     .from('usuarios').select('nome, papel').eq('id', session.user.id).maybeSingle();
   if (!me || me.papel !== 'admin') { location.replace('app.html'); return; }
   document.getElementById('who').textContent = `${me.nome} · admin`;
+  renderNav('painel', true);   // dashboard é admin-only
 
   document.getElementById('logout').addEventListener('click', signOut);
 
@@ -184,10 +185,7 @@ function today() { return new Date().toISOString().slice(0, 10); }
 function fmtDate(d) { const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; }
 function brl(n) { return 'R$ ' + Number(n).toFixed(2); }
 function fmtNum(n) { return Number(n).toLocaleString('pt-BR'); }
-function esc(s) {
-  return String(s).replace(/[&<>"]/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-}
+// esc() vem de nav.js.
 
 let toastTimer;
 function showToast(text, kind) {

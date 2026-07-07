@@ -13,10 +13,26 @@
 
     <form id="reset-form" novalidate>
       <label for="senha">Nova senha</label>
-      <input id="senha" type="password" autocomplete="new-password" required>
+      <div class="password-field">
+        <input id="senha" type="password" autocomplete="new-password" required>
+        <span class="toggle-senha" onclick="toggleSenha(this)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </span>
+      </div>
 
       <label for="senha2">Repita a nova senha</label>
-      <input id="senha2" type="password" autocomplete="new-password" required>
+      <div class="password-field">
+        <input id="senha2" type="password" autocomplete="new-password" required>
+        <span class="toggle-senha" onclick="toggleSenha(this)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </span>
+      </div>
 
       <button id="submit" type="submit">Salvar nova senha</button>
     </form>
@@ -27,6 +43,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js"></script>
   <script src="assets/js/auth.js"></script>
+  <script src="assets/js/password-toggle.js"></script>
   <script>
     const form = document.getElementById('reset-form');
     const senhaEl = document.getElementById('senha');

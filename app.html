@@ -20,7 +20,6 @@
         <a class="bigbtn" href="#abastecer">⛽<span>Abastecer</span></a>
         <a class="bigbtn" href="#viagem">🚗<span>Registrar viagem</span></a>
       </div>
-      <a class="adminlink" id="admin-link" href="dashboard.html" hidden>📊 Painel do admin</a>
       <h2>Seus últimos lançamentos</h2>
       <ul id="recent" class="recent"><li class="muted">Carregando…</li></ul>
     </section>
@@ -36,7 +35,7 @@
         <label for="ab-data">Data</label>
         <input id="ab-data" type="date" required>
 
-        <label for="ab-km">Km do odômetro</label>
+        <label for="ab-km">Km do odômetro <button type="button" class="hint" data-hint="É o que o painel do carro está mostrando agora, no momento do abastecimento.">i</button></label>
         <input id="ab-km" type="number" inputmode="decimal" min="0" step="1" required>
 
         <label for="ab-litros">Litros</label>
@@ -69,7 +68,7 @@
         <label for="vg-data">Data</label>
         <input id="vg-data" type="date" required>
 
-        <label>Km inicial (automático)</label>
+        <label>Km inicial (automático) <button type="button" class="hint" data-hint="Vem sozinho: é o km final da última viagem deste veículo (ou o km atual do veículo, se for a primeira). Você não digita.">i</button></label>
         <div id="vg-km-ini" class="readonly">—</div>
 
         <label for="vg-km-fim">Km final</label>
@@ -90,19 +89,83 @@
         <button id="vg-submit" type="submit">Salvar viagem</button>
       </form>
     </section>
+
+    <!-- HISTÓRICO -->
+    <section id="view-historico" class="view" hidden>
+      <h1>Histórico</h1>
+      <ul id="hist-list" class="recent"><li class="muted">Carregando…</li></ul>
+      <button id="hist-more" type="button" hidden>Carregar mais</button>
+    </section>
+
+    <!-- ADMIN (hub) -->
+    <section id="view-admin" class="view" hidden>
+      <h1>Administração</h1>
+      <div class="bigbtns">
+        <a class="bigbtn" href="dashboard.html">📊<span>Painel do admin</span></a>
+        <a class="bigbtn" href="#veiculos">🚙<span>Veículos</span></a>
+        <a class="bigbtn" href="#usuarios">👤<span>Usuários</span></a>
+      </div>
+    </section>
+
+    <!-- VEÍCULOS (admin) -->
+    <section id="view-veiculos" class="view" hidden>
+      <a class="back" href="#admin">← Administração</a>
+      <h1>Veículos</h1>
+      <form id="veic-form" novalidate>
+        <input type="hidden" id="veic-id">
+        <label for="veic-placa">Placa</label>
+        <input id="veic-placa" type="text" autocomplete="off" required>
+        <label for="veic-modelo">Modelo</label>
+        <input id="veic-modelo" type="text" autocomplete="off" required>
+        <label for="veic-apelido">Apelido</label>
+        <input id="veic-apelido" type="text" autocomplete="off">
+        <label for="veic-km">Km atual</label>
+        <input id="veic-km" type="number" inputmode="decimal" min="0" step="1" required>
+        <button id="veic-submit" type="submit">Salvar veículo</button>
+        <button id="veic-cancel" type="button" class="linkbtn" hidden>Cancelar edição</button>
+      </form>
+      <h2>Frota</h2>
+      <div class="tablewrap">
+        <table id="veic-list">
+          <thead><tr><th>Placa</th><th>Modelo</th><th>Apelido</th><th>Km</th><th>Status</th><th></th></tr></thead>
+          <tbody><tr><td colspan="6" class="muted">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- USUÁRIOS (admin) -->
+    <section id="view-usuarios" class="view" hidden>
+      <a class="back" href="#admin">← Administração</a>
+      <h1>Usuários</h1>
+      <p class="subtitle">Para criar um novo usuário, crie a conta no Supabase Authentication → Users, depois adicione a linha na tabela usuarios. Aqui você ajusta papel e status.</p>
+      <div class="tablewrap">
+        <table id="usu-list">
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th><th></th></tr></thead>
+          <tbody><tr><td colspan="5" class="muted">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
   </main>
+
+  <nav id="bottomnav" class="bottomnav"></nav>
 
   <div id="toast" class="msg"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js"></script>
   <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/hints.js"></script>
   <script src="assets/js/abastecimento.js"></script>
   <script src="assets/js/viagem.js"></script>
+  <script src="assets/js/historico.js"></script>
+  <script src="assets/js/veiculos.js"></script>
+  <script src="assets/js/usuarios.js"></script>
   <script>
     document.getElementById('logout').addEventListener('click', signOut);
 
     let SESSION = null;
+    let ADMIN = false;
     function currentUserId() { return SESSION.user.id; }
 
     // Toast global usado pelos formulários.
@@ -130,15 +193,21 @@
     }
 
     // Rota por hash: mostra a view, esconde as outras.
-    const views = ['home', 'abastecer', 'viagem'];
+    const views = ['home', 'abastecer', 'viagem', 'historico', 'admin', 'veiculos', 'usuarios'];
+    const adminViews = ['admin', 'veiculos', 'usuarios'];
     function route() {
-      const name = (location.hash.replace('#', '') || 'home');
-      const active = views.includes(name) ? name : 'home';
+      let active = (location.hash.replace('#', '') || 'home');
+      if (!views.includes(active)) active = 'home';
+      if (adminViews.includes(active) && !ADMIN) active = 'home';   // RLS já bloqueia; UI também
       views.forEach(v =>
         document.getElementById('view-' + v).hidden = (v !== active));
       if (active === 'abastecer') initAbastecimento();
       if (active === 'viagem') initViagem();
       if (active === 'home') loadRecent();
+      if (active === 'historico') initHistorico();
+      if (active === 'veiculos') initVeiculos();
+      if (active === 'usuarios') initUsuarios();
+      renderNav(adminViews.includes(active) ? 'painel' : active, ADMIN);
       window.scrollTo(0, 0);
     }
 
@@ -178,13 +247,21 @@
     (async () => {
       SESSION = await requireAuth();
       if (!SESSION) return;
-      const { data } = await supabaseClient
+      let { data } = await supabaseClient
         .from('usuarios').select('nome, papel')
         .eq('id', SESSION.user.id).maybeSingle();
-      document.getElementById('who').textContent =
-        data ? `${data.nome} · ${data.papel}` : SESSION.user.email;
-      if (data && data.papel === 'admin')
-        document.getElementById('admin-link').hidden = false;
+      if (!data) {
+        // Primeiro acesso (ex.: pós-confirmação de e-mail no autocadastro):
+        // cria a linha. Trigger no banco força papel=funcionario, ativo=true.
+        const nome = (SESSION.user.user_metadata && SESSION.user.user_metadata.nome)
+          || SESSION.user.email;
+        const ins = await supabaseClient.from('usuarios')
+          .insert({ id: SESSION.user.id, nome, email: SESSION.user.email })
+          .select('nome, papel').maybeSingle();
+        data = ins.data || { nome, papel: 'funcionario' };
+      }
+      document.getElementById('who').textContent = `${data.nome} · ${data.papel}`;
+      ADMIN = data.papel === 'admin';
 
       window.addEventListener('hashchange', route);
       route();

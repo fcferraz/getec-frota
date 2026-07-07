@@ -36,7 +36,9 @@ async function signOut() {
 function authErrorMessage(error) {
   const msg = (error && error.message) || '';
   if (/invalid login credentials/i.test(msg)) return 'E-mail ou senha incorretos.';
-  if (/email not confirmed/i.test(msg)) return 'E-mail ainda não confirmado.';
+  if (/email not confirmed/i.test(msg)) return 'E-mail ainda não confirmado. Confira o link que enviamos.';
+  if (/already registered|already exists|user already/i.test(msg)) return 'Este e-mail já tem conta. Tente entrar.';
+  if (/password.*(6|at least|should be)|weak password/i.test(msg)) return 'A senha precisa de ao menos 6 caracteres.';
   if (/rate limit|too many/i.test(msg)) return 'Muitas tentativas. Espere um pouco e tente de novo.';
   return 'Não foi possível concluir. Tente novamente.';
 }
