@@ -119,7 +119,7 @@ async function load(veiculoNome, usuarioNome) {
     .select('data, veiculo_id, usuario_id, valor_total, foto_recibo_url')
     .gte('data', de).lte('data', ate).order('data', { ascending: false });
   let qv = supabaseClient.from('viagens')
-    .select('data, veiculo_id, usuario_id, km_rodado, foto_km_final_url')
+    .select('data, veiculo_id, usuario_id, km_final, km_rodado, foto_km_final_url')
     .gte('data', de).lte('data', ate).order('data', { ascending: false });
   if (vid) { qa = qa.eq('veiculo_id', vid); qv = qv.eq('veiculo_id', vid); }
   if (uid) { qa = qa.eq('usuario_id', uid); qv = qv.eq('usuario_id', uid); }
@@ -151,10 +151,13 @@ async function load(veiculoNome, usuarioNome) {
     `<td><button type="button" class="linkbtn" data-path="${esc(r.foto_recibo_url)}">Ver recibo</button></td>`);
 
   const odometros = viagens.filter(v => v.foto_km_final_url);
-  fillTable('t-viagens', odometros, 5, (r) =>
+  fillTable('t-viagens', odometros, 6, (r) =>
     `<td>${fmtDate(r.data)}</td><td>${esc(nomeV(r.veiculo_id))}</td>` +
-    `<td>${esc(nomeU(r.usuario_id))}</td><td>${fmtNum(Number(r.km_rodado))}</td>` +
-    `<td><button type="button" class="linkbtn" data-path="${esc(r.foto_km_final_url)}">Ver odômetro</button></td>`);
+    `<td>${esc(nomeU(r.usuario_id))}</td>` +
+    `<td class="km-final">${fmtNum(Number(r.km_final))}</td>` +
+    `<td>${fmtNum(Number(r.km_rodado))}</td>` +
+    `<td><button type="button" class="linkbtn" data-path="${esc(r.foto_km_final_url)}">Ver odômetro</button>` +
+    `<span class="checkhint">Confira com o Km final</span></td>`);
 
   wireFotos('t-recibos', 'o recibo');
   wireFotos('t-viagens', 'a foto do odômetro');

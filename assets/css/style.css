@@ -304,6 +304,10 @@ input[type="date"] {
 }
 .hint-pop.show { display: block; }
 
+/* Dashboard: km final é o número que a foto do odômetro valida — destaca. */
+.km-final { font-weight: 700; color: var(--accent); }
+.checkhint { display: block; margin-top: 4px; font-size: 0.72rem; color: var(--muted); }
+
 /* Abas Entrar / Criar conta no login. */
 .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
 .tab {
