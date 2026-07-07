@@ -65,7 +65,13 @@ Campos: veículo (select), data, km do odômetro, litros, valor total, posto, fo
 Upload da foto vai para o bucket `recibos` no caminho `{usuario_id}/{timestamp}.jpg`; salva a URL em `foto_recibo_url`.
 
 ### 4. Formulário de viagem
-Campos: veículo (select), data, km inicial, km final (km rodado calculado automaticamente pelo banco), destino, motivo, observação.
+Campos: veículo (select), data, km final, foto do odômetro (obrigatória), destino, motivo, observação.
+
+**Km inicial não é digitado pelo motorista** — é derivado automaticamente pelo banco (trigger `definir_km_inicial_viagem`, `before insert`): pega o `km_final` da última viagem daquele veículo ou, se for a primeira viagem, o `km_atual` do veículo. O front apenas **exibe** esse valor esperado (mesma consulta) como campo somente-leitura antes do envio; a fonte da verdade é o trigger, então nem enviamos `km_inicial` no insert. Isso fecha a brecha de fraude de o motorista digitar um km inicial menor que o real.
+
+A **foto do odômetro no km final é obrigatória** (mesmo padrão da foto de recibo: `capture="environment"`). Upload no bucket `recibos` com prefixo `km-` no nome (`{usuario_id}/km-{timestamp}.jpg`); o caminho é salvo em `foto_km_final_url`. Assim o km final de cada viagem — que vira o km inicial da próxima — fica sempre comprovado por foto.
+
+`km_rodado` continua calculado pelo banco (`km_final - km_inicial`). Viagens seguem individuais (várias por dia no mesmo veículo são normais); cada km final fotografado encadeia no início da próxima.
 
 ### 5. Dashboard do admin
 - Gasto total de combustível por veículo/período
@@ -83,6 +89,7 @@ Lista de usuários, papel (admin/funcionario), ativar/desativar acesso.
 ## Regras de negócio
 
 - `valor_por_litro` e `km_rodado` são calculados pelo banco (colunas geradas) — o front não precisa calcular, só exibir.
+- `viagens.km_inicial` é definido pelo banco via trigger `before insert` (`km_final` da última viagem do veículo, ou `km_atual` na primeira) — o front nunca envia esse valor, só exibe o esperado. Todo km final exige foto do odômetro (`foto_km_final_url`). Antifraude: motorista não consegue forjar o km inicial nem por chamada direta à API.
 - Trigger no banco atualiza `veiculos.km_atual` automaticamente a cada novo lançamento.
 - Funcionário só enxerga e edita os próprios registros (garantido por RLS, mas o front deve refletir isso na UI).
 

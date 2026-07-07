@@ -62,8 +62,32 @@ create table public.viagens (
   destino text,
   motivo text,
   observacao text,
+  foto_km_final_url text,
   criado_em timestamptz not null default now()
 );
+
+-- Antifraude: km_inicial é sempre derivado pelo banco, nunca digitado.
+-- km_final da última viagem do veículo, ou km_atual se for a primeira.
+create or replace function public.definir_km_inicial_viagem()
+returns trigger language plpgsql as $$
+declare
+  ultimo_km numeric;
+begin
+  select km_final into ultimo_km from public.viagens
+  where veiculo_id = new.veiculo_id order by criado_em desc limit 1;
+  if ultimo_km is not null then
+    new.km_inicial := ultimo_km;
+  else
+    select km_atual into new.km_inicial from public.veiculos where id = new.veiculo_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_definir_km_inicial on public.viagens;
+create trigger trg_definir_km_inicial
+before insert on public.viagens
+for each row execute function public.definir_km_inicial_viagem();
 
 -- ------------------------------------------------------------
 -- 5. ROW LEVEL SECURITY

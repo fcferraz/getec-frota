@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Painel · GETEC Frota</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div class="topbar wide">
+    <a class="back" href="app.html">← Início</a>
+    <span class="who" id="who">…</span>
+    <button id="logout" type="button">Sair</button>
+  </div>
+
+  <main class="card wide">
+    <h1>Painel do admin</h1>
+
+    <form id="filtros" class="filters">
+      <div>
+        <label for="f-de">De</label>
+        <input id="f-de" type="date">
+      </div>
+      <div>
+        <label for="f-ate">Até</label>
+        <input id="f-ate" type="date">
+      </div>
+      <div>
+        <label for="f-veiculo">Veículo</label>
+        <select id="f-veiculo"><option value="">Todos</option></select>
+      </div>
+      <div>
+        <label for="f-funcionario">Funcionário</label>
+        <select id="f-funcionario"><option value="">Todos</option></select>
+      </div>
+      <button id="f-aplicar" type="submit">Aplicar filtros</button>
+    </form>
+
+    <div class="metrics">
+      <div class="stat"><span class="stat-label">Gasto de combustível</span><span class="stat-val" id="m-gasto">—</span></div>
+      <div class="stat"><span class="stat-label">Km rodado</span><span class="stat-val" id="m-km">—</span></div>
+      <div class="stat"><span class="stat-label">Custo médio por km</span><span class="stat-val" id="m-custokm">—</span></div>
+    </div>
+
+    <h2>Por veículo</h2>
+    <div class="tablewrap">
+      <table id="t-veiculos">
+        <thead><tr><th>Veículo</th><th>Gasto</th><th>Km</th><th>Custo/km</th></tr></thead>
+        <tbody><tr><td colspan="4" class="muted">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+
+    <h2>Ranking de uso por funcionário</h2>
+    <div class="tablewrap">
+      <table id="t-ranking">
+        <thead><tr><th>Funcionário</th><th>Lançamentos</th><th>Km rodado</th><th>Gasto</th></tr></thead>
+        <tbody><tr><td colspan="4" class="muted">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+
+    <h2>Recibos de abastecimento</h2>
+    <div class="tablewrap">
+      <table id="t-recibos">
+        <thead><tr><th>Data</th><th>Veículo</th><th>Funcionário</th><th>Valor</th><th>Recibo</th></tr></thead>
+        <tbody><tr><td colspan="5" class="muted">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <div id="toast" class="msg"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+</body>
+</html>
