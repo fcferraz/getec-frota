@@ -150,8 +150,8 @@ async function load(veiculoNome, usuarioNome) {
     `<td>${esc(nomeU(r.usuario_id))}</td><td>${brl(Number(r.valor_total))}</td>` +
     `<td><button type="button" class="linkbtn" data-path="${esc(r.foto_recibo_url)}">Ver recibo</button></td>`);
 
-  const odometros = viagens.filter(v => v.foto_km_final_url);
-  fillTable('t-viagens', odometros, 7, (r) =>
+  const registros = viagens.filter(v => v.foto_km_final_url);
+  fillTable('t-viagens', registros, 7, (r) =>
     `<td>${fmtDate(r.data)}</td><td>${esc(nomeV(r.veiculo_id))}</td>` +
     `<td>${esc(nomeU(r.usuario_id))}</td>` +
     `<td>${fmtNum(Number(r.km_inicial))}</td>` +
@@ -161,7 +161,7 @@ async function load(veiculoNome, usuarioNome) {
     `<span class="checkhint">Confira com o Km final</span></td>`);
 
   wireFotos('t-recibos', 'o recibo');
-  wireFotos('t-viagens', 'a foto do odômetro');
+  wireFotos('t-viagens', 'o registro');
 }
 
 function fillTable(id, rows, cols, rowHtml) {
@@ -172,7 +172,7 @@ function fillTable(id, rows, cols, rowHtml) {
 }
 
 // URL assinada gerada sob demanda (bucket privado 'recibos', expira em 1h).
-// Recibos e fotos de odômetro dividem o mesmo bucket (ver viagem.js).
+// Recibos e registros de viagem dividem o mesmo bucket (ver viagem.js).
 function wireFotos(tableId, oQue) {
   for (const btn of document.querySelectorAll('#' + tableId + ' button[data-path]')) {
     btn.addEventListener('click', async () => {
